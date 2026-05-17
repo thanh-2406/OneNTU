@@ -1,11 +1,11 @@
-const { httpStatus, status } = require('../config/constants');
+const { HTTP_STATUS, STATUS } = require('../config/constants');
 
 const errorHandler = (err, req, res, next) => {
   // Log the error for your own debugging
   console.error('🔥 Global Error Caught:', err.stack);
 
   // Determine the status code (default to 500 Internal Server Error)
-  const statusCode = err.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
+  const statusCode = err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
   
   // Don't leak raw database errors to the frontend in production
   const message = err.message || 'An unexpected internal server error occurred.';

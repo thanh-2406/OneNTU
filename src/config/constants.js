@@ -1,5 +1,5 @@
 const constants = {
-  httpStatus: {
+  HTTP_STATUS: {
     OK: 200,
     CREATED: 201,
     BAD_REQUEST: 400,
@@ -10,36 +10,40 @@ const constants = {
     INTERNAL_SERVER_ERROR: 500,
   },
 
-  roles: {
+  ROLES: {
     STUDENT: 'student',
     STAFF: 'staff',
     ADMIN: 'admin',
     ALL: ['student', 'staff', 'admin'],
   },
 
-  jwt: {
+  JWT: {
     ACCESS_TOKEN_EXPIRES_IN: '15m',
     REFRESH_TOKEN_EXPIRES_IN: '7d',
   },
 
-  pagination: {
+  SECURITY: {
+    BCRYPT_SALT_ROUNDS: 12,
+  },
+
+  PAGINATION: {
     DEFAULT_PAGE: 1,
     DEFAULT_LIMIT: 20,
     MAX_LIMIT: 100,
   },
 
-  validation: {
+  VALIDATION: {
     DEPARTMENT_NAME: { MIN: 2, MAX: 150 },
     DEPARTMENT_CODE: { MIN: 2, MAX: 20 },
     NUMERIC_ID_REGEX: /^\d+$/,
   },
 
-  status: {
+  STATUS: {
     SUCCESS: 'success',
     ERROR: 'error',
   },
 
-  messages: {
+  MESSAGES: {
     SERVER_RUNNING: 'Dashboard API is running smoothly.',
     ROUTE_NOT_FOUND: (route) => `Route ${route} not found.`,
     MISSING_AUTH_TOKEN: 'Access denied. No token provided.',
@@ -54,7 +58,7 @@ const constants = {
     DEPARTMENT_CONFLICT: 'Department name or code already exists.',
   },
 
-  statusTransition: {
+  STATUS_TRANSITION: {
     ACTIVE: 'active',
     INACTIVE: 'inactive',
   },

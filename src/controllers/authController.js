@@ -1,15 +1,15 @@
 const authService = require('../services/authService');
-const { httpStatus, messages, roles, status } = require('../config/constants');
+const { HTTP_STATUS, MESSAGES, ROLES, STATUS } = require('../config/constants');
 
 const login = async (req, res, next) => {
   const { email, password, role } = req.body;
 
   if (!email || !password || !role) {
-    return res.status(httpStatus.BAD_REQUEST).json({ status: status.ERROR, message: messages.REQUIRED_AUTH_FIELDS });
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ status: STATUS.ERROR, message: MESSAGES.REQUIRED_AUTH_FIELDS });
   }
 
-  if (!roles.ALL.includes(role)) {
-    return res.status(httpStatus.BAD_REQUEST).json({ status: status.ERROR, message: messages.INVALID_ROLE });
+  if (!ROLES.ALL.includes(role)) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ status: STATUS.ERROR, message: MESSAGES.INVALID_ROLE });
   }
 
   try {
@@ -21,7 +21,7 @@ const login = async (req, res, next) => {
       userAgent: req.headers['user-agent'],
     });
 
-    res.status(httpStatus.OK).json({ status: status.SUCCESS, data: authPayload });
+    res.status(HTTP_STATUS.OK).json({ status: STATUS.SUCCESS, data: authPayload });
   } catch (error) {
     next(error);
   }

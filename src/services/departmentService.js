@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const { httpStatus, messages } = require('../config/constants');
+const { HTTP_STATUS, MESSAGES } = require('../config/constants');
 
 const getAllDepartments = async () => {
   const result = await db.query(
@@ -20,8 +20,8 @@ const createDepartment = async ({ department_name, department_code }) => {
     return result.rows[0];
   } catch (error) {
     if (error.code === '23505') {
-      const conflictError = new Error(messages.DEPARTMENT_CONFLICT);
-      conflictError.statusCode = httpStatus.CONFLICT;
+      const conflictError = new Error(MESSAGES.DEPARTMENT_CONFLICT);
+      conflictError.statusCode = HTTP_STATUS.CONFLICT;
       throw conflictError;
     }
 

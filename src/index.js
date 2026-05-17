@@ -4,7 +4,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const { errorHandler } = require('./middleware/errorMiddleware');
 const departmentRoutes = require('./routes/departmentRoutes');
-
+const { httpStatus, messages, status } = require('./config/constants');
 
 // Initialize the Express application
 const app = express();
@@ -25,9 +25,9 @@ app.use(express.urlencoded({ extended: true }));
 // ==========================================
 // A simple health-check route to verify the server is running
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'success', 
-    message: 'Dashboard API is running smoothly.' 
+  res.status(httpStatus.OK).json({ 
+    status: status.SUCCESS, 
+    message: messages.SERVER_RUNNING,
   });
 });
 
@@ -39,9 +39,9 @@ app.use('/api/departments', departmentRoutes);
 // ==========================================
 // Catch-all for undefined routes (Express 5 compatible)
 app.use((req, res) => {
-  res.status(404).json({
-    status: 'error',
-    message: `Route ${req.originalUrl} not found.`
+  res.status(httpStatus.NOT_FOUND).json({
+    status: status.ERROR,
+    message: messages.ROUTE_NOT_FOUND(req.originalUrl),
   });
 });
 

@@ -1,4 +1,5 @@
 const { ZodError } = require('zod');
+const { httpStatus, status } = require('../config/constants');
 
 // Accepts a Zod schema and validates the request body, query, or params
 const validateRequest = (schema) => {
@@ -20,8 +21,8 @@ const validateRequest = (schema) => {
           message: err.message,
         }));
 
-        return res.status(400).json({
-          status: 'error',
+        return res.status(httpStatus.BAD_REQUEST).json({
+          status: status.ERROR,
           message: 'Invalid request data',
           errors: formattedErrors,
         });

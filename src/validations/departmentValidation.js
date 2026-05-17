@@ -1,20 +1,21 @@
 const { z } = require('zod');
+const { validation } = require('../config/constants');
 
 const createDepartmentSchema = z.object({
   body: z.object({
-    department_name: z.string().min(2, "Name is too short").max(150),
-    department_code: z.string().min(2).max(20)
+    department_name: z.string().min(validation.DEPARTMENT_NAME.MIN, "Name is too short").max(validation.DEPARTMENT_NAME.MAX),
+    department_code: z.string().min(validation.DEPARTMENT_CODE.MIN).max(validation.DEPARTMENT_CODE.MAX),
   })
 });
 
 const updateDepartmentSchema = z.object({
   body: z.object({
-    department_name: z.string().min(2).max(150).optional(),
-    department_code: z.string().min(2).max(20).optional(),
-    is_active: z.boolean().optional()
+    department_name: z.string().min(validation.DEPARTMENT_NAME.MIN).max(validation.DEPARTMENT_NAME.MAX).optional(),
+    department_code: z.string().min(validation.DEPARTMENT_CODE.MIN).max(validation.DEPARTMENT_CODE.MAX).optional(),
+    is_active: z.boolean().optional(),
   }),
   params: z.object({
-    id: z.string().regex(/^\d+$/, "ID must be a number")
+    id: z.string().regex(validation.NUMERIC_ID_REGEX, "ID must be a number")
   })
 });
 

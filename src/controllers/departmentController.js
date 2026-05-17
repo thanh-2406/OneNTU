@@ -1,32 +1,28 @@
-const db = require('../config/db');
+const departmentService = require('../services/departmentService');
+const { httpStatus, messages, status } = require('../config/constants');
 
 // GET all active departments
 const getAllDepartments = async (req, res, next) => {
   try {
-    const result = await db.query('SELECT * FROM departments WHERE is_active = true ORDER BY department_name ASC');
-    res.status(200).json({ status: 'success', data: result.rows });
+    const departments = await departmentService.getAllDepartments();
+    res.status(httpStatus.OK).json({ status: status.SUCCESS, data: departments });
   } catch (error) {
-    next(error); // Passes to your global error handler
+    next(error);
   }
 };
 
 // POST a new department
 const createDepartment = async (req, res, next) => {
+  const { department_name, department_code } = req.body;
+
+  if (!department_name || !department_code) {
+    return res.status(httpStatus.BAD_REQUEST).json({ status: status.ERROR, message: messages.REQUIRED_DEPARTMENT_FIELDS });
+  }
+
   try {
-    const { department_name, department_code } = req.body;
-    
-    const query = `
-      INSERT INTO departments (department_name, department_code) 
-      VALUES ($1, $2) RETURNING *`;
-      
-    const result = await db.query(query, [department_name, department_code]);
-    
-    res.status(201).json({ status: 'success', data: result.rows[0] });
+    const department = await departmentService.createDepartment({ department_name, department_code });
+    res.status(201).json({ status: 'success', data: department });
   } catch (error) {
-    // If Postgres throws a unique constraint error (e.g., code already exists), handle it cleanly
-    if (error.code === '23505') {
-      return res.status(409).json({ status: 'error', message: 'Department name or code already exists.' });
-    }
     next(error);
   }
 };

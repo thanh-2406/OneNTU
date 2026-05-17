@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { HTTP_STATUS, MESSAGES, STATUS } = require('../config/constants');
+const { sendError } = require('../utils/response');
 
 // Check if the user has a valid JWT access token
 const authenticateToken = (req, res, next) => {
@@ -8,18 +9,12 @@ const authenticateToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(HTTP_STATUS.UNAUTHORIZED).json({ 
-      status: STATUS.ERROR, 
-      message: MESSAGES.MISSING_AUTH_TOKEN,
-    });
+    return sendError(res, MESSAGES.MISSING_AUTH_TOKEN, HTTP_STATUS.UNAUTHORIZED);
   }
 
   jwt.verify(token, process.env.JWT_ACCESS_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(HTTP_STATUS.FORBIDDEN).json({ 
-        status: STATUS.ERROR, 
-        message: MESSAGES.INVALID_TOKEN,
-      });
+      return sendError(res, MESSAGES.INVALID_TOKEN, HTTP_STATUS.FORBIDDEN);
     }
     
     // Attach the decoded token payload (id, role) to the request object
@@ -33,17 +28,11 @@ const authenticateToken = (req, res, next) => {
 const requireRole = (allowedRoles) => {
   return (req, res, next) => {
     if (!req.user || !req.user.role) {
-      return res.status(HTTP_STATUS.UNAUTHORIZED).json({ 
-        status: STATUS.ERROR, 
-        message: MESSAGES.ROLE_NOT_FOUND,
-      });
+      return sendError(res, MESSAGES.ROLE_NOT_FOUND, HTTP_STATUS.UNAUTHORIZED);
     }
 
     if (!allowedRoles.includes(req.user.role)) {
-      return res.status(HTTP_STATUS.FORBIDDEN).json({ 
-        status: STATUS.ERROR, 
-        message: MESSAGES.PERMISSION_DENIED,
-      });
+      return sendError(res, MESSAGES.PERMISSION_DENIED, HTTP_STATUS.FORBIDDEN);
     }
 
     next();

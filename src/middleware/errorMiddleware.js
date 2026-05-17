@@ -1,4 +1,5 @@
-const { HTTP_STATUS, STATUS } = require('../config/constants');
+const { HTTP_STATUS } = require('../config/constants');
+const { sendError } = require('../utils/response');
 
 const errorHandler = (err, req, res, next) => {
   // Log the error for your own debugging
@@ -10,12 +11,8 @@ const errorHandler = (err, req, res, next) => {
   // Don't leak raw database errors to the frontend in production
   const message = err.message || 'An unexpected internal server error occurred.';
 
-  res.status(statusCode).json({
-    status: status.ERROR,
-    message,
-    // Only send the stack trace if we are in development mode
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-  });
+  const errors = process.env.NODE_ENV === 'development' ? { stack: err.stack } : null;
+  return sendError(res, message, statusCode, errors);
 };
 
 module.exports = { errorHandler };

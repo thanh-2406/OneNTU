@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const db = require('../config/db');
 const { generateAccessToken, generateRefreshToken, hashToken } = require('../utils/jwt');
-const { HTTP_STATUS, MESSAGES, ROLES } = require('../config/constants');
+const { HTTP_STATUS, MESSAGES, ROLES, JWT } = require('../config/constants');
 
 const ROLE_CONFIG = {
   [ROLES.STUDENT]: { tableName: 'students', idColumn: 'student_id', nameColumn: 'full_name' },
@@ -9,59 +9,51 @@ const ROLE_CONFIG = {
   [ROLES.ADMIN]: { tableName: 'admins', idColumn: 'admin_id', nameColumn: 'full_name' },
 };
 
+const createHttpError = (message, statusCode) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
+
+const normalizeEmail = (email) => {
+  return typeof email === 'string' ? email.trim().toLowerCase() : '';
+};
+
 const validateRole = (role) => {
   if (!ROLE_CONFIG[role]) {
-    const error = new Error(MESSAGES.INVALID_ROLE);
-    error.statusCode = HTTP_STATUS.BAD_REQUEST;
-    throw error;
+    throw createHttpError(MESSAGES.INVALID_ROLE, HTTP_STATUS.BAD_REQUEST);
   }
 };
 
-const login = async ({ email, password, role, ipAddress, userAgent }) => {
+const getUserByEmail = async (email, role) => {
   validateRole(role);
 
-  const normalizedEmail = email.toLowerCase();
-  const { tableName, idColumn, nameColumn } = ROLE_CONFIG[role];
+  const { tableName } = ROLE_CONFIG[role];
+  const normalizedEmail = normalizeEmail(email);
+  const query = `SELECT * FROM ${tableName} WHERE email = $1 AND is_active = true`;
+  const { rows } = await db.query(query, [normalizedEmail]);
 
-  const userQuery = `SELECT * FROM ${tableName} WHERE email = $1 AND is_active = true`;
-  const userResult = await db.query(userQuery, [normalizedEmail]);
+  return rows[0] || null;
+};
 
-  if (userResult.rows.length === 0) {
-    const error = new Error(MESSAGES.INVALID_CREDENTIALS_INACTIVE);
-    error.statusCode = HTTP_STATUS.UNAUTHORIZED;
-    throw error;
+const verifyPassword = async (password, passwordHash) => {
+  const isValid = await bcrypt.compare(password, passwordHash);
+  if (!isValid) {
+    throw createHttpError(MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
   }
+};
 
-  const user = userResult.rows[0];
-  const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-
-  if (!isPasswordValid) {
-    const error = new Error(MESSAGES.INVALID_CREDENTIALS);
-    error.statusCode = HTTP_STATUS.UNAUTHORIZED;
-    throw error;
-  }
-
-  const tokenPayload = { id: user[idColumn] };
-  const accessToken = generateAccessToken(tokenPayload, role);
-  const refreshToken = generateRefreshToken(tokenPayload, role);
-  const hashedRefreshToken = hashToken(refreshToken);
-
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
-
-  const sessionQuery = `
+const createSession = async ({ role, userId, tokenHash, ipAddress, userAgent, expiresAt }) => {
+  const query = `
     INSERT INTO sessions (actor_type, actor_id, token_hash, ip_address, user_agent, expires_at)
     VALUES ($1, $2, $3, $4, $5, $6)
   `;
 
-  await db.query(sessionQuery, [
-    role,
-    user[idColumn],
-    hashedRefreshToken,
-    ipAddress,
-    userAgent,
-    expiresAt,
-  ]);
+  await db.query(query, [role, userId, tokenHash, ipAddress, userAgent, expiresAt]);
+};
+
+const buildAuthResponse = (user, role, accessToken, refreshToken) => {
+  const { idColumn, nameColumn } = ROLE_CONFIG[role];
 
   return {
     accessToken,
@@ -75,6 +67,42 @@ const login = async ({ email, password, role, ipAddress, userAgent }) => {
   };
 };
 
+const login = async ({ email, password, role, ipAddress, userAgent }) => {
+  if (!email || !password || !role) {
+    throw createHttpError(MESSAGES.REQUIRED_AUTH_FIELDS, HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const user = await getUserByEmail(email, role);
+
+  if (!user) {
+    throw createHttpError(MESSAGES.INVALID_CREDENTIALS_INACTIVE, HTTP_STATUS.UNAUTHORIZED);
+  }
+
+  await verifyPassword(password, user.password_hash);
+
+  const authPayload = { id: user[ROLE_CONFIG[role].idColumn] };
+  const accessToken = generateAccessToken(authPayload, role);
+  const refreshToken = generateRefreshToken(authPayload, role);
+  const refreshTokenHash = hashToken(refreshToken);
+
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  await createSession({
+    role,
+    userId: user[ROLE_CONFIG[role].idColumn],
+    tokenHash: refreshTokenHash,
+    ipAddress,
+    userAgent,
+    expiresAt,
+  });
+
+  return buildAuthResponse(user, role, accessToken, refreshToken);
+};
+
 module.exports = {
   login,
+  getUserByEmail,
+  verifyPassword,
+  createSession,
 };

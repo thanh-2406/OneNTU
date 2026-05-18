@@ -12,6 +12,8 @@ const documentTypeRoutes = require('./routes/documentTypeRoutes');
 const { seedInitialDocumentTypes } = require('./services/documentTypeService');
 const schoolRoutes = require('./routes/schoolRoutes');
 const { seedInitialSchools } = require('./services/schoolService');
+const programmeRoutes = require('./routes/programmeRoutes');
+const { seedInitialProgrammes } = require('./services/programmeService');
 const { sendSuccess, sendError } = require('./utils/response');
 const { HTTP_STATUS, MESSAGES, STATUS } = require('./config/constants');
 
@@ -43,6 +45,7 @@ app.use('/api/request-types', requestTypeRoutes);
 app.use('/api/statuses', requestStatusRoutes);
 app.use('/api/document-types', documentTypeRoutes);
 app.use('/api/schools', schoolRoutes);
+app.use('/api/programmes', programmeRoutes);
 
 // ==========================================
 // Error Handling
@@ -76,5 +79,15 @@ app.listen(PORT, () => {
     console.log('✅ Document types seeded (if table was empty)');
   }).catch((err) => {
     console.error('❌ Error seeding document types:', err);
+  });
+  seedInitialSchools().then(() => {
+    console.log('✅ Schools seeded (if table was empty)');
+  }).catch((err) => {
+    console.error('❌ Error seeding schools:', err);
+  });
+  seedInitialProgrammes().then(() => {
+    console.log('✅ Programmes seeded (if table was empty)');
+  }).catch((err) => {
+    console.error('❌ Error seeding programmes:', err);
   });
 });

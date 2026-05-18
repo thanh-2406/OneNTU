@@ -8,7 +8,7 @@ const createRequestStatusSchema = z.object({
     code: z.string().min(1).max(50),
     description: z.string().max(500).optional(),
     display_order: z.number().int().min(0),
-    is_active: z.boolean().optional(),
+    is_terminal: z.boolean().optional(),
   })
 });
 
@@ -18,7 +18,7 @@ const updateRequestStatusSchema = z.object({
     code: z.string().min(1).max(50).optional(),
     description: z.string().max(500).optional(),
     display_order: z.number().int().min(0).optional(),
-    is_active: z.boolean().optional(),
+    is_terminal: z.boolean().optional(),
   }),
   params: z.object({
     id: z.string().regex(VALIDATION.NUMERIC_ID_REGEX, 'ID must be a number')

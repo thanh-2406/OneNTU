@@ -2,9 +2,9 @@ const db = require('../config/db');
 const { SCHOOL_SEEDS, HTTP_STATUS, MESSAGES } = require('../config/constants');
 const getPaginationFromRequest = require('../utils/paginate');
 
-const DEFAULT_SORT = 'name';
+const DEFAULT_SORT = 'school_name';
 const DEFAULT_ORDER = 'asc';
-const ALLOWED_SORT_FIELDS = ['name', 'code'];
+const ALLOWED_SORT_FIELDS = ['school_name', 'school_code'];
 
 const createHttpError = (message, statusCode) => {
   const err = new Error(message);
@@ -15,7 +15,6 @@ const createHttpError = (message, statusCode) => {
 const normalizePayload = (payload = {}) => ({
   name: typeof payload.name === 'string' ? payload.name.trim() : '',
   code: typeof payload.code === 'string' ? payload.code.trim() : '',
-  description: typeof payload.description === 'string' ? payload.description.trim() : null,
   is_active: typeof payload.is_active === 'boolean' ? payload.is_active : true,
 });
 
@@ -66,12 +65,12 @@ const createSchool = async (payload) => {
 
   try {
     const sql = `
-      INSERT INTO schools (name, code, description, is_active)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO schools (school_name, school_code, is_active)
+      VALUES ($1, $2, $3)
       RETURNING *
     `;
 
-    const { rows } = await db.query(sql, [name, code, description, is_active]);
+    const { rows } = await db.query(sql, [name, code, is_active]);
     return rows[0];
   } catch (err) {
     if (err.code === '23505') {
@@ -88,11 +87,11 @@ const updateSchool = async (id, payload) => {
   let idx = 1;
 
   if (normalized.name) {
-    fields.push(`name = $${idx++}`);
+    fields.push(`school_name = $${idx++}`);
     values.push(normalized.name);
   }
   if (normalized.code) {
-    fields.push(`code = $${idx++}`);
+    fields.push(`school_code = $${idx++}`);
     values.push(normalized.code);
   }
   if (payload.description !== undefined) {
@@ -137,12 +136,10 @@ const seedInitialSchools = async () => {
   const createTableSql = `
     CREATE TABLE IF NOT EXISTS schools (
       school_id SERIAL PRIMARY KEY,
-      name VARCHAR(150) NOT NULL UNIQUE,
-      code VARCHAR(20) NOT NULL UNIQUE,
-      description TEXT,
-      is_active BOOLEAN DEFAULT true,
-      created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW()
+      school_name VARCHAR(150) NOT NULL UNIQUE,
+      school_code VARCHAR(20) NOT NULL UNIQUE,
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
 
@@ -155,13 +152,13 @@ const seedInitialSchools = async () => {
     const values = [];
 
     seeds.forEach((school, index) => {
-      const base = index * 4;
-      placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`);
-      values.push(school.name, school.code, school.description, school.is_active);
+      const base = index * 3;
+      placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3})`);
+      values.push(school.name, school.code, school.is_active);
     });
 
     const sql = `
-      INSERT INTO schools (school_name, school_code, description, is_active)
+      INSERT INTO schools (school_name, school_code, is_active)
       VALUES ${placeholders.join(', ')}
     `;
 

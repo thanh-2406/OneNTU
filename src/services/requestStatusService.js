@@ -7,15 +7,14 @@ const createHttpError = (message, statusCode) => {
   return err;
 };
 
-const getAllStatuses = async ({ activeOnly = true } = {}) => {
-  const whereClause = activeOnly ? 'WHERE is_active = true' : '';
-  const sql = `SELECT * FROM request_statuses ${whereClause} ORDER BY display_order ASC`;
+const getAllStatuses = async () => {
+  const sql = `SELECT * FROM request_statuses ORDER BY display_order ASC`;
   const { rows } = await db.query(sql);
   return rows;
 };
 
 const getStatusById = async (id) => {
-  const sql = `SELECT * FROM request_statuses WHERE request_status_id = $1`;
+  const sql = `SELECT * FROM request_statuses WHERE status_id = $1`;
   const { rows } = await db.query(sql, [id]);
   return rows[0] || null;
 };
@@ -23,13 +22,13 @@ const getStatusById = async (id) => {
 const seedRequestStatuses = async () => {
   const createTableSql = `
     CREATE TABLE IF NOT EXISTS request_statuses (
-      request_status_id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      code TEXT NOT NULL UNIQUE,
+      status_id SERIAL PRIMARY KEY,
+      status_name VARCHAR(100) NOT NULL UNIQUE,
+      status_code VARCHAR(30) NOT NULL UNIQUE,
       description TEXT,
-      display_order INTEGER DEFAULT 0,
-      is_active BOOLEAN DEFAULT true,
-      created_at TIMESTAMP DEFAULT NOW()
+      is_terminal BOOLEAN NOT NULL DEFAULT false,
+      display_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
 
@@ -44,7 +43,7 @@ const seedRequestStatuses = async () => {
     seeds.forEach((s, i) => {
       const idx = i * 5;
       placeholders.push(`($${idx + 1}, $${idx + 2}, $${idx + 3}, $${idx + 4}, $${idx + 5})`);
-      values.push(s.name, s.code, s.description, s.display_order, s.is_active);
+      values.push(s.name, s.code, s.description, s.display_order, s.is_terminal);
     });
 
     const insertSql = `

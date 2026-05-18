@@ -2,9 +2,9 @@ const db = require('../config/db');
 const { HTTP_STATUS, MESSAGES } = require('../config/constants');
 const getPaginationFromRequest = require('../utils/paginate');
 
-const DEFAULT_SORT = 'name';
+const DEFAULT_SORT = 'type_name';
 const DEFAULT_ORDER = 'asc';
-const ALLOWED_SORT_FIELDS = ['name', 'code'];
+const ALLOWED_SORT_FIELDS = ['type_name', 'type_code'];
 
 const createHttpError = (message, statusCode) => {
   const error = new Error(message);
@@ -52,7 +52,7 @@ const getAllRequestTypes = async (queryParams = {}) => {
 };
 
 const getRequestTypeById = async (id) => {
-  const sql = `SELECT * FROM request_types WHERE request_type_id = $1 AND is_active = true`;
+  const sql = `SELECT * FROM request_types WHERE type_id = $1 AND is_active = true`;
   const { rows } = await db.query(sql, [id]);
   return rows[0] || null;
 };
@@ -66,7 +66,7 @@ const createRequestType = async (payload) => {
 
   try {
     const sql = `
-      INSERT INTO request_types (name, code, description)
+      INSERT INTO request_types (type_name, type_code, description)
       VALUES ($1, $2, $3)
       RETURNING *
     `;
@@ -89,11 +89,11 @@ const updateRequestType = async (id, payload) => {
   const normalized = normalizePayload(payload);
 
   if (normalized.name) {
-    fields.push(`name = $${idx++}`);
+    fields.push(`type_name = $${idx++}`);
     values.push(normalized.name);
   }
   if (normalized.code) {
-    fields.push(`code = $${idx++}`);
+    fields.push(`type_code = $${idx++}`);
     values.push(normalized.code);
   }
   if (payload.description !== undefined) {
@@ -112,7 +112,7 @@ const updateRequestType = async (id, payload) => {
   const sql = `
     UPDATE request_types
     SET ${fields.join(', ')}
-    WHERE request_type_id = $${idx}
+    WHERE type_id = $${idx}
     RETURNING *
   `;
 
@@ -126,7 +126,7 @@ const softDeleteRequestType = async (id) => {
   const sql = `
     UPDATE request_types
     SET is_active = false
-    WHERE request_type_id = $1
+    WHERE type_id = $1
     RETURNING *
   `;
 
@@ -139,12 +139,12 @@ const seedInitialRequestTypes = async () => {
   // ensure table exists (id autoincrement)
   const createTableSql = `
     CREATE TABLE IF NOT EXISTS request_types (
-      request_type_id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      code TEXT NOT NULL UNIQUE,
+      type_id SERIAL PRIMARY KEY,
+      type_name VARCHAR(150) NOT NULL UNIQUE,
+      type_code VARCHAR(30) NOT NULL UNIQUE,
       description TEXT,
-      is_active BOOLEAN DEFAULT true,
-      created_at TIMESTAMP DEFAULT NOW()
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
 

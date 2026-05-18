@@ -4,6 +4,14 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const { errorHandler } = require('./middleware/errorMiddleware');
 const departmentRoutes = require('./routes/departmentRoutes');
+const requestTypeRoutes = require('./routes/requestTypeRoutes');
+const { seedInitialRequestTypes } = require('./services/requestTypeService');
+const requestStatusRoutes = require('./routes/requestStatusRoutes');
+const { seedRequestStatuses } = require('./services/requestStatusService');
+const documentTypeRoutes = require('./routes/documentTypeRoutes');
+const { seedInitialDocumentTypes } = require('./services/documentTypeService');
+const schoolRoutes = require('./routes/schoolRoutes');
+const { seedInitialSchools } = require('./services/schoolService');
 const { sendSuccess, sendError } = require('./utils/response');
 const { HTTP_STATUS, MESSAGES, STATUS } = require('./config/constants');
 
@@ -31,6 +39,10 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/departments', departmentRoutes);
+app.use('/api/request-types', requestTypeRoutes);
+app.use('/api/statuses', requestStatusRoutes);
+app.use('/api/document-types', documentTypeRoutes);
+app.use('/api/schools', schoolRoutes);
 
 // ==========================================
 // Error Handling
@@ -49,4 +61,20 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
   console.log(`🩺 Health check: http://localhost:${PORT}/api/health`);
+  // Seed request types table with initial data if needed
+  seedInitialRequestTypes().then(() => {
+    console.log('✅ Request types seeded (if table was empty)');
+  }).catch((err) => {
+    console.error('❌ Error seeding request types:', err);
+  });
+  seedRequestStatuses().then(() => {
+    console.log('✅ Request statuses seeded (if table was empty)');
+  }).catch((err) => {
+    console.error('❌ Error seeding request statuses:', err);
+  });
+  seedInitialDocumentTypes().then(() => {
+    console.log('✅ Document types seeded (if table was empty)');
+  }).catch((err) => {
+    console.error('❌ Error seeding document types:', err);
+  });
 });

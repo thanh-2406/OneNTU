@@ -1,0 +1,15 @@
+*** Begin Patch
+*** Update File: d:\.DUE 48K14.1\my-dashboard-backend\src\index.js
+@@
+   seedInitialDocumentTypes().then(() => {
+     console.log('✅ Document types seeded (if table was empty)');
+   }).catch((err) => {
+     console.error('❌ Error seeding document types:', err);
+   });
++  seedInitialSchools().then(() => {
++    console.log('✅ Schools seeded (if table was empty)');
++  }).catch((err) => {
++    console.error('❌ Error seeding schools:', err);
++  });
+ });
+*** End Patch

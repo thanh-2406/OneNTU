@@ -3,7 +3,7 @@ const router = express.Router();
 
 // Import your newly created files
 const departmentController = require('../controllers/departmentController');
-const { createDepartmentSchema } = require('../validations/departmentValidation');
+const { createDepartmentSchema, updateDepartmentSchema } = require('../validations/departmentValidation');
 
 // Import your middleware
 const { authenticateToken, requireRole } = require('../middleware/authMiddleware');
@@ -19,6 +19,23 @@ router.post(
   requireRole(['admin']), 
   validateRequest(createDepartmentSchema), 
   departmentController.createDepartment
+);
+
+// PATCH update (admin only)
+router.patch(
+  '/:id',
+  authenticateToken,
+  requireRole(['admin']),
+  validateRequest(updateDepartmentSchema),
+  departmentController.updateDepartment
+);
+
+// DELETE (soft) (admin only)
+router.delete(
+  '/:id',
+  authenticateToken,
+  requireRole(['admin']),
+  departmentController.deleteDepartment
 );
 
 module.exports = router;

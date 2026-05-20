@@ -66,6 +66,21 @@ const constants = {
     { name: 'Education Leadership', code: 'EDUL', school_code: 'COED', is_active: true },
   ],
 
+  DEPARTMENT_SEEDS: [
+    { name: 'Computer Science', code: 'CS', is_active: true },
+    { name: 'Humanities', code: 'HUM', is_active: true },
+    { name: 'Business', code: 'BUS', is_active: true },
+    { name: 'Engineering', code: 'ENG', is_active: true },
+    { name: 'Education', code: 'EDU', is_active: true },
+  ],
+
+  SPECIALISATION_SEEDS: [
+    { name: 'Data Science', description: 'Data analysis and machine learning', is_active: true },
+    { name: 'Software Engineering', description: 'Software development and engineering practices', is_active: true },
+    { name: 'Mechanical Design', description: 'Mechanical systems and design', is_active: true },
+    { name: 'Business Analytics', description: 'Business analysis and insights', is_active: true },
+  ],
+
   VALIDATION: {
     DEPARTMENT_NAME: { MIN: 2, MAX: 150 },
     DEPARTMENT_CODE: { MIN: 2, MAX: 20 },
@@ -94,6 +109,8 @@ const constants = {
     INVALID_CREDENTIALS_INACTIVE: 'Invalid credentials or inactive account.',
     REQUIRED_DEPARTMENT_FIELDS: 'Department name and code are required.',
     DEPARTMENT_CONFLICT: 'Department name or code already exists.',
+    REQUIRED_SPECIALISATION_FIELDS: 'Specialisation name is required.',
+    SPECIALISATION_CONFLICT: 'Specialisation name already exists.',
     REQUIRED_SCHOOL_FIELDS: 'School name and code are required.',
     SCHOOL_CONFLICT: 'School name or code already exists.',
     REQUIRED_PROGRAMME_FIELDS: 'Programme name, code, and school_id are required.',

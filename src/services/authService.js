@@ -1,6 +1,6 @@
-const bcrypt = require('bcrypt');
 const db = require('../config/db');
 const { generateAccessToken, generateRefreshToken, hashToken } = require('../utils/jwt');
+const { comparePassword } = require('../utils/password');
 const { HTTP_STATUS, MESSAGES, ROLES, JWT } = require('../config/constants');
 
 const ROLE_CONFIG = {
@@ -37,7 +37,7 @@ const getUserByEmail = async (email, role) => {
 };
 
 const verifyPassword = async (password, passwordHash) => {
-  const isValid = await bcrypt.compare(password, passwordHash);
+  const isValid = await comparePassword(password, passwordHash);
   if (!isValid) {
     throw createHttpError(MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
   }

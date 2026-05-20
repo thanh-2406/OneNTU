@@ -14,6 +14,9 @@ const schoolRoutes = require('./routes/schoolRoutes');
 const { seedInitialSchools } = require('./services/schoolService');
 const programmeRoutes = require('./routes/programmeRoutes');
 const { seedInitialProgrammes } = require('./services/programmeService');
+const { seedInitialDepartments } = require('./services/departmentService');
+const specialisationRoutes = require('./routes/specialisationRoutes');
+const { seedInitialSpecialisations } = require('./services/specialisationService');
 const { sendSuccess, sendError } = require('./utils/response');
 const { HTTP_STATUS, MESSAGES, STATUS } = require('./config/constants');
 
@@ -46,6 +49,7 @@ app.use('/api/statuses', requestStatusRoutes);
 app.use('/api/document-types', documentTypeRoutes);
 app.use('/api/schools', schoolRoutes);
 app.use('/api/programmes', programmeRoutes);
+app.use('/api/specialisations', specialisationRoutes);
 
 // ==========================================
 // Error Handling
@@ -89,5 +93,15 @@ app.listen(PORT, () => {
     console.log('✅ Programmes seeded (if table was empty)');
   }).catch((err) => {
     console.error('❌ Error seeding programmes:', err);
+  });
+  seedInitialDepartments().then(() => {
+    console.log('✅ Departments seeded (if table was empty)');
+  }).catch((err) => {
+    console.error('❌ Error seeding departments:', err);
+  });
+  seedInitialSpecialisations().then(() => {
+    console.log('✅ Specialisations seeded (if table was empty)');
+  }).catch((err) => {
+    console.error('❌ Error seeding specialisations:', err);
   });
 });

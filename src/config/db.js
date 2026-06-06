@@ -24,4 +24,6 @@ pool.on('error', (err) => {
 // Export a robust query function for our controllers to use
 module.exports = {
   query: (text, params) => pool.query(text, params),
+  // Provide access to a pooled client for transactions
+  getClient: () => pool.connect(),
 };

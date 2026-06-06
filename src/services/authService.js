@@ -36,6 +36,16 @@ const getUserByEmail = async (email, role) => {
   return rows[0] || null;
 };
 
+const getUserById = async (id, role) => {
+  validateRole(role);
+
+  const { tableName, idColumn } = ROLE_CONFIG[role];
+  const query = `SELECT * FROM ${tableName} WHERE ${idColumn} = $1`;
+  const { rows } = await db.query(query, [id]);
+
+  return rows[0] || null;
+};
+
 const verifyPassword = async (password, passwordHash) => {
   const isValid = await comparePassword(password, passwordHash);
   if (!isValid) {
@@ -103,6 +113,7 @@ const login = async ({ email, password, role, ipAddress, userAgent }) => {
 module.exports = {
   login,
   getUserByEmail,
+  getUserById,
   verifyPassword,
   createSession,
 };

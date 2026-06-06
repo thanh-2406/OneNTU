@@ -1,9 +1,10 @@
 const jwt = require('jsonwebtoken');
-const { HTTP_STATUS, MESSAGES, STATUS } = require('../config/constants');
+const { HTTP_STATUS, MESSAGES } = require('../config/constants');
 const { sendError } = require('../utils/response');
+const { getUserById } = require('../services/authService');
 
 // Check if the user has a valid JWT access token
-const authenticateToken = (req, res, next) => {
+const authenticateToken = async (req, res, next) => {
   // Tokens are usually sent in the header as: "Bearer eyJhbGci..."
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -12,15 +13,34 @@ const authenticateToken = (req, res, next) => {
     return sendError(res, MESSAGES.MISSING_AUTH_TOKEN, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  jwt.verify(token, process.env.JWT_ACCESS_SECRET, (err, decoded) => {
-    if (err) {
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+  } catch (err) {
+    return sendError(res, MESSAGES.INVALID_TOKEN, HTTP_STATUS.FORBIDDEN);
+  }
+
+  if (!decoded || !decoded.id || !decoded.role) {
+    return sendError(res, MESSAGES.INVALID_TOKEN, HTTP_STATUS.FORBIDDEN);
+  }
+
+  try {
+    const user = await getUserById(decoded.id, decoded.role);
+    if (!user || !user.is_active) {
       return sendError(res, MESSAGES.INVALID_TOKEN, HTTP_STATUS.FORBIDDEN);
     }
-    
-    // Attach the decoded token payload (id, role) to the request object
-    req.user = decoded; 
-    next(); // Pass control to the next middleware or controller
-  });
+
+    req.user = {
+      id: user[decoded.role === 'admin' ? 'admin_id' : decoded.role === 'staff' ? 'staff_id' : 'student_id'],
+      role: decoded.role,
+      email: user.email,
+    };
+
+    next();
+  } catch (error) {
+    console.error('Error verifying authenticated user', error);
+    return sendError(res, MESSAGES.INVALID_TOKEN, HTTP_STATUS.FORBIDDEN);
+  }
 };
 
 // Check if the authenticated user has the required role

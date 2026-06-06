@@ -4,15 +4,15 @@ const { sendValidationError } = require('../utils/response');
 
 // Accepts a Zod schema and validates the request body, query, or params
 const validateRequest = (schema) => {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     try {
-      // Parse the incoming request against the schema
-      schema.parse({
+      // Parse the incoming request against the schema asynchronously
+      await schema.parseAsync({
         body: req.body,
         query: req.query,
         params: req.params,
       });
-      
+
       next(); // Data is perfectly valid, proceed
     } catch (error) {
       if (error instanceof ZodError) {

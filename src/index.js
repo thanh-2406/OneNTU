@@ -16,6 +16,7 @@ const programmeRoutes = require('./routes/programmeRoutes');
 const { seedInitialProgrammes } = require('./services/programmeService');
 const { seedInitialDepartments } = require('./services/departmentService');
 const specialisationRoutes = require('./routes/specialisationRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const { seedInitialSpecialisations } = require('./services/specialisationService');
 const { sendSuccess, sendError } = require('./utils/response');
 const { HTTP_STATUS, MESSAGES, STATUS } = require('./config/constants');
@@ -50,6 +51,7 @@ app.use('/api/document-types', documentTypeRoutes);
 app.use('/api/schools', schoolRoutes);
 app.use('/api/programmes', programmeRoutes);
 app.use('/api/specialisations', specialisationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ==========================================
 // Error Handling

@@ -21,6 +21,124 @@ const normalizeEmail = (email) => (typeof email === 'string' ? email.trim().toLo
  *   hash password, insert student, send welcome email.
  * - Returns sanitized student object (no password_hash).
  */
+const resetStudentPassword = async (studentId) => {
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+
+    const existingStudent = await client.query('SELECT student_id, email, full_name FROM students WHERE student_id = $1', [studentId]);
+    if (existingStudent.rowCount === 0) {
+      throw createHttpError('Student not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    const student = existingStudent.rows[0];
+    const tempPassword = generateTempPassword();
+    const passwordHash = await hashPassword(tempPassword);
+
+    await client.query(
+      `UPDATE students SET password_hash = $1, must_change_password = true, password_reset_at = NOW(), updated_at = NOW() WHERE student_id = $2`,
+      [passwordHash, studentId]
+    );
+
+    await client.query(
+      `UPDATE sessions SET revoked_at = NOW() WHERE actor_type = 'student' AND actor_id = $1 AND revoked_at IS NULL`,
+      [studentId]
+    );
+
+    await client.query('COMMIT');
+
+    try {
+      const { studentPasswordResetTemplate } = require('../utils/emailTemplates');
+      const { subject, text, html } = studentPasswordResetTemplate({
+        name: student.full_name,
+        loginIdentifier: student.email,
+        tempPassword,
+      });
+
+      const emailResult = await sendEmail({ to: student.email, subject, text, html });
+      if (!emailResult.ok) {
+        console.warn('Password reset email failed to send', { email: student.email, error: emailResult.error });
+      }
+    } catch (emailErr) {
+      console.error('Unexpected error while sending password reset email', emailErr);
+    }
+
+    const updated = await getStudentById(studentId);
+    return { student: updated, tempPassword };
+  } catch (err) {
+    try {
+      await client.query('ROLLBACK');
+    } catch (rbErr) {
+      console.error('Failed to rollback transaction', rbErr);
+    }
+
+    if (err && err.statusCode) throw err;
+    console.error('Unexpected error in resetStudentPassword', err);
+    throw createHttpError(MESSAGES.SERVER_RUNNING || 'Failed to reset student password', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  } finally {
+    client.release();
+  }
+};
+
+const resetStaffPassword = async (staffId) => {
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+
+    const existingStaff = await client.query('SELECT staff_id, email, full_name FROM staff WHERE staff_id = $1', [staffId]);
+    if (existingStaff.rowCount === 0) {
+      throw createHttpError('Staff not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    const staff = existingStaff.rows[0];
+    const tempPassword = generateTempPassword();
+    const passwordHash = await hashPassword(tempPassword);
+
+    await client.query(
+      `UPDATE staff SET password_hash = $1, must_change_password = true, password_reset_at = NOW(), updated_at = NOW() WHERE staff_id = $2`,
+      [passwordHash, staffId]
+    );
+
+    await client.query(
+      `UPDATE sessions SET revoked_at = NOW() WHERE actor_type = 'staff' AND actor_id = $1 AND revoked_at IS NULL`,
+      [staffId]
+    );
+
+    await client.query('COMMIT');
+
+    try {
+      const { staffPasswordResetTemplate } = require('../utils/emailTemplates');
+      const { subject, text, html } = staffPasswordResetTemplate({
+        name: staff.full_name,
+        loginIdentifier: staff.email,
+        tempPassword,
+      });
+
+      const emailResult = await sendEmail({ to: staff.email, subject, text, html });
+      if (!emailResult.ok) {
+        console.warn('Password reset email failed to send', { email: staff.email, error: emailResult.error });
+      }
+    } catch (emailErr) {
+      console.error('Unexpected error while sending password reset email', emailErr);
+    }
+
+    const updated = await getStaffById(staffId);
+    return { staff: updated, tempPassword };
+  } catch (err) {
+    try {
+      await client.query('ROLLBACK');
+    } catch (rbErr) {
+      console.error('Failed to rollback transaction', rbErr);
+    }
+
+    if (err && err.statusCode) throw err;
+    console.error('Unexpected error in resetStaffPassword', err);
+    throw createHttpError(MESSAGES.SERVER_RUNNING || 'Failed to reset staff password', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  } finally {
+    client.release();
+  }
+};
+
 const createStudent = async ({ full_name, matric_number, email, programme_id, year_of_study }, adminId) => {
   if (!adminId) throw createHttpError('Admin ID is required for auditing', HTTP_STATUS.BAD_REQUEST);
 
@@ -849,6 +967,7 @@ module.exports = {
   updateStudent,
   deactivateStudent,
   activateStudent,
+  resetStudentPassword,
   getStudents,
   getStudentById,
   getStaffs,
@@ -856,5 +975,6 @@ module.exports = {
   updateStaff,
   deactivateStaff,
   activateStaff,
+  resetStaffPassword,
   createStaff,
 };

@@ -4,8 +4,12 @@ const { JWT } = require('../config/constants');
 
 // Generate a short-lived access token
 const generateAccessToken = (user, role) => {
+  const payload = { id: user.id, role, passwordResetAt: user.passwordResetAt };
+  if (user.sessionId) {
+    payload.sessionId = user.sessionId;
+  }
   return jwt.sign(
-    { id: user.id, role },
+    payload,
     process.env.JWT_ACCESS_SECRET,
     { expiresIn: JWT.ACCESS_TOKEN_EXPIRES_IN }
   );
@@ -13,8 +17,12 @@ const generateAccessToken = (user, role) => {
 
 // Generate a long-lived refresh token
 const generateRefreshToken = (user, role) => {
+  const payload = { id: user.id, role, passwordResetAt: user.passwordResetAt };
+  if (user.sessionId) {
+    payload.sessionId = user.sessionId;
+  }
   return jwt.sign(
-    { id: user.id, role },
+    payload,
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: JWT.REFRESH_TOKEN_EXPIRES_IN }
   );

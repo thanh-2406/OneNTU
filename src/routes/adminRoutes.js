@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const adminController = require('../controllers/adminController');
+const authController = require('../controllers/authController');
 const {
   createStudentSchema,
   createStaffSchema,
@@ -11,6 +12,7 @@ const {
   getStudentSchema,
   listStaffSchema,
   getStaffSchema,
+  forceLogoutAllSchema,
 } = require('../validations/adminValidation');
 
 const { authenticateToken, requireRole } = require('../middleware/authMiddleware');
@@ -61,6 +63,15 @@ router.patch(
   adminController.activateStudent
 );
 
+// POST /admin/students/:id/reset-password
+router.post(
+  '/students/:id/reset-password',
+  authenticateToken,
+  requireRole(['admin']),
+  validateRequest(getStudentSchema),
+  adminController.resetStudentPassword
+);
+
 // GET /admin/staff
 router.get(
   '/staff',
@@ -106,6 +117,15 @@ router.patch(
   adminController.activateStaff
 );
 
+// POST /admin/staff/:id/reset-password
+router.post(
+  '/staff/:id/reset-password',
+  authenticateToken,
+  requireRole(['admin']),
+  validateRequest(getStaffSchema),
+  adminController.resetStaffPassword
+);
+
 // POST /admin/students
 router.post(
   '/students',
@@ -122,6 +142,15 @@ router.post(
   requireRole(['admin']),
   validateRequest(createStaffSchema),
   adminController.createStaff
+);
+
+// POST /admin/auth/logout-all
+router.post(
+  '/auth/logout-all',
+  authenticateToken,
+  requireRole(['admin']),
+  validateRequest(forceLogoutAllSchema),
+  authController.forceLogoutAll
 );
 
 module.exports = router;

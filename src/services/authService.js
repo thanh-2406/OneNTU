@@ -57,9 +57,11 @@ const createSession = async ({ role, userId, tokenHash, ipAddress, userAgent, ex
   const query = `
     INSERT INTO sessions (actor_type, actor_id, token_hash, ip_address, user_agent, expires_at)
     VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING session_id
   `;
 
-  await db.query(query, [role, userId, tokenHash, ipAddress, userAgent, expiresAt]);
+  const { rows } = await db.query(query, [role, userId, tokenHash, ipAddress, userAgent, expiresAt]);
+  return rows[0].session_id;
 };
 
 const buildAuthResponse = (user, role, accessToken, refreshToken) => {
@@ -77,6 +79,25 @@ const buildAuthResponse = (user, role, accessToken, refreshToken) => {
   };
 };
 
+const forceLogoutAll = async (actorType, actorId) => {
+  if (!['student', 'staff'].includes(actorType)) {
+    throw createHttpError('Invalid actor type', HTTP_STATUS.BAD_REQUEST);
+  }
+
+  if (!actorId || actorId <= 0) {
+    throw createHttpError('Invalid actor ID', HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const query = `
+    UPDATE sessions 
+    SET revoked_at = NOW()
+    WHERE actor_type = $1 AND actor_id = $2 AND revoked_at IS NULL
+  `;
+
+  const result = await db.query(query, [actorType, actorId]);
+  return { revokedCount: result.rowCount };
+};
+
 const login = async ({ email, password, role, ipAddress, userAgent }) => {
   if (!email || !password || !role) {
     throw createHttpError(MESSAGES.REQUIRED_AUTH_FIELDS, HTTP_STATUS.BAD_REQUEST);
@@ -90,15 +111,12 @@ const login = async ({ email, password, role, ipAddress, userAgent }) => {
 
   await verifyPassword(password, user.password_hash);
 
-  const authPayload = { id: user[ROLE_CONFIG[role].idColumn] };
-  const accessToken = generateAccessToken(authPayload, role);
-  const refreshToken = generateRefreshToken(authPayload, role);
-  const refreshTokenHash = hashToken(refreshToken);
+  const refreshTokenHash = hashToken(generateRefreshToken({ id: user[ROLE_CONFIG[role].idColumn] }, role));
 
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
-  await createSession({
+  const sessionId = await createSession({
     role,
     userId: user[ROLE_CONFIG[role].idColumn],
     tokenHash: refreshTokenHash,
@@ -106,6 +124,14 @@ const login = async ({ email, password, role, ipAddress, userAgent }) => {
     userAgent,
     expiresAt,
   });
+
+  const authPayload = { 
+    id: user[ROLE_CONFIG[role].idColumn], 
+    passwordResetAt: user.password_reset_at,
+    sessionId: sessionId
+  };
+  const accessToken = generateAccessToken(authPayload, role);
+  const refreshToken = generateRefreshToken(authPayload, role);
 
   return buildAuthResponse(user, role, accessToken, refreshToken);
 };
@@ -116,4 +142,5 @@ module.exports = {
   getUserById,
   verifyPassword,
   createSession,
+  forceLogoutAll,
 };

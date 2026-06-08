@@ -78,6 +78,23 @@ const activateStudent = async (req, res, next) => {
   }
 };
 
+// POST /admin/students/:id/reset-password
+const resetStudentPassword = async (req, res, next) => {
+  try {
+    const studentId = Number(req.params.id);
+    const { student, tempPassword } = await adminService.resetStudentPassword(studentId);
+
+    const response = {
+      ...student,
+      tempPassword,
+    };
+
+    return sendSuccess(res, response, 'Student password reset successfully', HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // GET /admin/staff
 const listStaff = async (req, res, next) => {
   try {
@@ -139,6 +156,23 @@ const activateStaff = async (req, res, next) => {
   }
 };
 
+// POST /admin/staff/:id/reset-password
+const resetStaffPassword = async (req, res, next) => {
+  try {
+    const staffId = Number(req.params.id);
+    const { staff, tempPassword } = await adminService.resetStaffPassword(staffId);
+
+    const response = {
+      ...staff,
+      tempPassword,
+    };
+
+    return sendSuccess(res, response, 'Staff password reset successfully', HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // POST /admin/staff
 const createStaff = async (req, res, next) => {
   try {
@@ -160,10 +194,12 @@ module.exports = {
   updateStudent,
   deactivateStudent,
   activateStudent,
+  resetStudentPassword,
   listStaff,
   getStaff,
   updateStaff,
   deactivateStaff,
   activateStaff,
+  resetStaffPassword,
   createStaff,
 };

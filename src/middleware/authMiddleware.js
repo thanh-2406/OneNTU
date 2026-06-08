@@ -30,6 +30,27 @@ const authenticateToken = async (req, res, next) => {
       return sendError(res, MESSAGES.INVALID_TOKEN, HTTP_STATUS.FORBIDDEN);
     }
 
+    const tokenPasswordResetAt = decoded.passwordResetAt ? new Date(decoded.passwordResetAt) : null;
+    const userPasswordResetAt = new Date(user.password_reset_at);
+
+    if (tokenPasswordResetAt && userPasswordResetAt > tokenPasswordResetAt) {
+      return sendError(res, MESSAGES.INVALID_TOKEN, HTTP_STATUS.FORBIDDEN);
+    }
+
+    // Check if session is revoked
+    if (decoded.sessionId) {
+      const db = require('../config/db');
+      const { rows } = await db.query(
+        `SELECT revoked_at FROM sessions WHERE session_id = $1`,
+        [decoded.sessionId]
+      );
+
+      // If session exists and has been revoked, reject the token
+      if (rows.length > 0 && rows[0].revoked_at !== null) {
+        return sendError(res, 'Session has been revoked', HTTP_STATUS.UNAUTHORIZED);
+      }
+    }
+
     req.user = {
       id: user[decoded.role === 'admin' ? 'admin_id' : decoded.role === 'staff' ? 'staff_id' : 'student_id'],
       role: decoded.role,

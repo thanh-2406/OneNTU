@@ -229,6 +229,17 @@ const updateStaffSchema = z.object({
   params: staffParamsSchema,
 });
 
+const forceLogoutAllBodySchema = z.object({
+  actor_type: z.enum(['student', 'staff']).describe('Type of user to logout'),
+  actor_id: z.preprocess(parsePositiveInt, z.number().int().positive().describe('ID of user to logout')),
+});
+
+const forceLogoutAllSchema = z.object({
+  body: forceLogoutAllBodySchema,
+  query: z.object({}).optional(),
+  params: z.object({}).optional(),
+});
+
 module.exports = {
   createStudentSchema,
   createStaffSchema,
@@ -238,5 +249,6 @@ module.exports = {
   getStudentSchema,
   listStaffSchema,
   getStaffSchema,
+  forceLogoutAllSchema,
   MATRIC_NUMBER_REGEX,
 };

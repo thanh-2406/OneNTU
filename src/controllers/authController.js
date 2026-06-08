@@ -24,4 +24,19 @@ const login = async (req, res, next) => {
   }
 };
 
-module.exports = { login };
+const forceLogoutAll = async (req, res, next) => {
+  const { actor_type, actor_id } = req.body;
+
+  if (!actor_type || !actor_id) {
+    return sendError(res, 'actor_type and actor_id are required', HTTP_STATUS.BAD_REQUEST);
+  }
+
+  try {
+    const result = await authService.forceLogoutAll(actor_type, actor_id);
+    return sendSuccess(res, result, `Force logged out all sessions for ${actor_type}:${actor_id}`, HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { login, forceLogoutAll };
